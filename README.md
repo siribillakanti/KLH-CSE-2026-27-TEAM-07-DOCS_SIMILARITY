@@ -23,7 +23,7 @@
 
 ## Supervisor
 
-**[Supervisor Name]**
+**Dr Anuradha**
 
 ---
 
