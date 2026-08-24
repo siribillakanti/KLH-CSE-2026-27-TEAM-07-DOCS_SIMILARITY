@@ -116,6 +116,14 @@ Suffix Arrays and LCP Arrays are chosen because the project focuses on finding *
 - Java-compatible IDE
 - Git
 
+### Course Information
+
+**Course:** Data Structures and Algorithms - 3
+**Course Code:** 25CS2103E
+**Academic Year:** 2026–2027
+**Team:** 07
+
+
 ### Clone the Repository
 
 ```bash
@@ -123,10 +131,4 @@ git clone <REPOSITORY-URL>
 cd KLH-CSE-2026-27-TEAM-07-DOCS_SIMILARITY
 ---
 
-## Course Information
-
-**Course:** Data Structures and Algorithms - 3
-**Course Code:** 25CS2103E
-**Academic Year:** 2026–2027
-**Team:** 07
 
