@@ -29,15 +29,25 @@
 
 ## Abstract
 
-DOCS_SIMILARITY is a document similarity analyzer designed to compare large text documents and identify duplicate or highly similar documents. The system analyzes common substrings and matching patterns between documents, computes similarity scores, and ranks documents according to their similarity.
-
-The project uses suffix-based string-processing techniques as its primary algorithmic approach. **Suffix Arrays** and **Longest Common Prefix (LCP) Arrays**, with LCP computation using the **Kasai Algorithm**, are used to analyze common textual segments between documents.
-
-The system is designed to efficiently process multiple documents and can support applications such as **plagiarism detection, duplicate document identification, and document clustering**.
-
-The project directly aligns with the DSA-3 course's TextHack framework, where document similarity is mapped to suffix structures. The course specifically covers Suffix Arrays, LCP Arrays, and Kasai's Algorithm for document similarity and common-substring analysis.
-
+DOCS_SIMILARITY is a document similarity analyzer designed to compare multiple large text documents and identify duplicate or highly similar documents. The system analyzes common substrings and matching patterns between documents, computes similarity scores, and ranks documents according to their degree of similarity. The project uses suffix-based string-processing techniques, particularly Suffix Arrays and Longest Common Prefix (LCP) Arrays, with the Kasai Algorithm used for LCP construction. These techniques enable efficient analysis of shared textual content across multiple documents. The system is intended for applications such as plagiarism detection, duplicate document identification, and document clustering. The approach directly aligns with the DSA-3 TextHack framework, which maps document similarity analysis to suffix structures and includes Suffix Arrays, LCP Arrays, and Kasai's Algorithm in the string-algorithm module.
 ---
+
+## Objectives
+
+The main objective of **DOCS_SIMILARITY** is to develop an efficient suffix-based system for analyzing similarity among multiple large text documents.
+
+### Specific Objectives
+
+- Compare **multiple text documents** and identify duplicate or highly similar documents.
+- Analyze **common substrings and matching patterns** between documents.
+- Construct and utilize **Suffix Arrays** for efficient string organization and analysis.
+- Construct the **LCP Array using the Kasai Algorithm** to identify common textual segments.
+- Compute **similarity scores** based on shared textual content.
+- **Rank document pairs** according to their similarity scores.
+- Design the system to efficiently handle **large text documents and multiple documents**.
+- Evaluate the **time and space complexity** of the implemented algorithms.
+- Demonstrate applications in **plagiarism detection, duplicate-document identification, and document clustering**.
+  
 ## Literature Grounding
 
 | Research Article | What it did / Method | Key Finding & Conclusion | Relevance to DOCS_SIMILARITY |
@@ -54,82 +64,63 @@ The project directly aligns with the DSA-3 course's TextHack framework, where do
 
 Existing research establishes that Suffix Arrays and LCP structures provide efficient mechanisms for string and document-level analysis, while plagiarism research demonstrates the usefulness of textual similarity for detecting duplicated content. Semantic approaches are more suitable for paraphrased or meaning-preserving plagiarism. Therefore, DOCS_SIMILARITY focuses specifically on efficient detection of duplicate and highly textually similar documents using Suffix Arrays, LCP, and common-substring analysis.
 
-## Setup and Execution Instructions
+## Design Methodology
+
+DOCS_SIMILARITY will compare multiple text documents and identify documents that contain a high amount of common textual content.
+
+### Implementation Steps
+
+1. **Input Documents**
+   - Accept multiple text documents as input.
+   - Assign a unique ID to each document.
+
+2. **Text Preprocessing**
+   - Normalize the text and remove unnecessary formatting.
+   - Preserve document boundaries for comparison.
+
+3. **Suffix Array Construction**
+   - Combine the processed documents using unique separators.
+   - Construct a **Suffix Array** for the combined text.
+
+4. **LCP Array Construction**
+   - Construct the **LCP (Longest Common Prefix) Array**.
+   - Use the **Kasai Algorithm** to calculate LCP values efficiently.
+
+5. **Common Substring Analysis**
+   - Analyze LCP values to identify common textual segments between different documents.
+
+6. **Similarity Calculation**
+   - Use the identified common text to calculate a similarity score for each document pair.
+
+7. **Ranking**
+   - Rank document pairs from highest to lowest similarity.
+   - Display the most similar documents as the final result.
+
+### Algorithms and Data Structures
+
+- **Suffix Array** – organizes suffixes of the document collection.
+- **LCP Array** – identifies the length of common prefixes between suffixes.
+- **Kasai Algorithm** – efficiently constructs the LCP Array.
+- **Document IDs and boundaries** – identify which document each suffix belongs to.
+- **Similarity Score** – measures the amount of shared textual content.
+
+### Why These Methods?
+
+Suffix Arrays and LCP Arrays are chosen because the project focuses on finding **common substrings and matching patterns in large text documents**. These techniques are also directly related to the DSA-3 syllabus, which maps document similarity to suffix structures.
+
+## Setup and Execution
 
 ### Prerequisites
 
-* Java Development Kit (JDK)
-* Java-compatible IDE or command-line environment
-* Git
+- Java Development Kit (JDK)
+- Java-compatible IDE
+- Git
 
 ### Clone the Repository
 
 ```bash
 git clone <REPOSITORY-URL>
 cd KLH-CSE-2026-27-TEAM-07-DOCS_SIMILARITY
-```
-
-### Compilation
-
-The compilation command will be added once the Java project structure and source files are finalized.
-
-### Execution
-
-The execution command and input format will be updated after the initial implementation is completed.
-
-### Input
-
-The system will accept multiple text documents as input for similarity analysis.
-
-### Output
-
-The planned output includes:
-
-* Similar document pairs
-* Similarity scores
-* Common textual segments or matching patterns
-* Ranked similarity results
-
-The DSA-3 practical plan specifically includes constructing suffix-array and LCP representations, identifying common textual segments, and generating similarity scores between documents.
-
----
-
-## Current Phase Status
-
-### Phase 1 — Problem Understanding and Algorithm Design
-
-**Status: In Progress**
-
-### Completed
-
-* [x] Problem statement understood and analyzed
-* [x] Project scope identified
-* [x] Project mapped to DSA-3 String Algorithms
-
-
-### In Progress
-
-* [ ] Design document preprocessing
-* [ ] Design Suffix Array construction
-* [ ] Design LCP computation using Kasai Algorithm
-* [ ] Define similarity scoring method
-* [ ] Design multi-document comparison
-* [ ] Design document ranking
-* [ ] Define input and output formats
-
-### Planned
-
-* [ ] Implement Suffix Array
-* [ ] Implement LCP Array using Kasai Algorithm
-* [ ] Implement common-substring analysis
-* [ ] Implement similarity score calculation
-* [ ] Implement multi-document comparison
-* [ ] Implement similarity ranking
-* [ ] Test using sample documents
-* [ ] Analyze time and space complexity
-* [ ] Test performance on larger document collections
-* [ ] Complete final documentation and demonstration
-
 ---
 
 ## Course Information
