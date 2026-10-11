@@ -1,0 +1,7 @@
+A brief overview of clean energy technology for a general audience.
+
+Renewable energy sources such as solar, wind, and hydroelectric power are becoming increasingly important as the world seeks to reduce its reliance on fossil fuels. Solar panels convert sunlight directly into electricity through the photovoltaic effect, while wind turbines harness kinetic energy from moving air masses. Hydroelectric dams generate power by channeling the force of flowing water through turbines connected to generators.
+
+The transition to renewable energy is driven by both environmental concerns and economic factors. As the cost of solar panels and wind turbines continues to fall, renewable energy has become competitive with, and in many cases cheaper than, traditional fossil fuel generation. Governments around the world have introduced incentives and subsidies to accelerate this transition, recognizing the long-term benefits of a cleaner energy grid.
+
+Looking ahead, researchers are also investigating next-generation solar cell materials such as perovskites, which promise higher efficiency at lower manufacturing cost than traditional silicon cells.
