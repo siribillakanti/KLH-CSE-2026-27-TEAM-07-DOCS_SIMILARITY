@@ -1,423 +1,442 @@
 # DOCS_SIMILARITY
 
-**Document Similarity Analyzer** — a DSA-3 project built around a genuine Suffix Array + Kasai's LCP Algorithm implementation.
+**Document Similarity Analyzer Using Suffix Arrays and Kasai's LCP Algorithm**
+
+DOCS_SIMILARITY is a DSA-3 project that analyzes multiple documents to identify duplicate or highly similar textual content using a custom implementation of Suffix Arrays and the Kasai Algorithm for Longest Common Prefix (LCP) construction.
 
 ---
 
 ## 1. Abstract
 
-DOCS_SIMILARITY compares multiple documents — **TXT, PDF, and DOCX** — and identifies
-duplicate or highly similar content between them. Instead of relying on off-the-shelf
-similarity libraries (cosine similarity, TF-IDF, Levenshtein distance, etc.), the core
-engine is a hand-built **Suffix Array**, constructed with the prefix-doubling technique,
-paired with **Kasai's Algorithm** for O(n) **LCP (Longest Common Prefix) Array**
-construction. A lightweight extraction layer (Apache PDFBox for PDF, Apache POI for DOCX)
-converts every supported format into plain text first; the DSA engine itself is completely
-format-agnostic and unchanged by which file type a document arrived in.
+DOCS_SIMILARITY is a document similarity analyzer designed to compare multiple text documents and identify duplicate or highly similar content. The system extracts text from supported document formats, processes it at the word level, identifies common word sequences, calculates similarity scores, and ranks document pairs according to their textual similarity.
 
-Documents are compared at the **word level**: text is normalized, split into words, and each
-word is mapped to an integer token ID. The Suffix Array and Kasai's LCP Array are built over
-that integer word sequence, so LCP values count shared **words** and the dashboard reports
-meaningful common word sequences such as `machine learning algorithms`, never character
-fragments such as `nvironment`.
+Unlike approaches that rely on prebuilt similarity libraries, TF-IDF, or semantic embeddings, the core engine implements Suffix Array construction using the prefix-doubling technique and LCP computation using the Kasai Algorithm. By representing normalized words as integer token IDs, the system identifies meaningful shared word sequences rather than arbitrary character fragments.
+
+The application supports TXT, PDF, and DOCX files. It combines algorithmic processing in a Java Spring Boot backend with a React and Vite frontend to provide document uploading, similarity ranking, common-sequence analysis, and algorithm-related information.
+
+The project demonstrates the application of advanced string-processing algorithms to practical problems such as duplicate document identification, textual overlap analysis, and preliminary plagiarism screening.
 
 ## 2. Objectives
 
-- Implement a genuine, from-scratch Suffix Array construction algorithm (no libraries).
-- Implement Kasai's Algorithm to build the LCP Array in linear time.
-- Use the Suffix Array / LCP Array over word token IDs to detect common word sequences **across** documents,
-  without false matches crossing document boundaries.
-- Accept documents in multiple real-world formats (TXT, PDF, DOCX) by extracting plain
-  text before analysis, without altering the DSA engine itself.
-- Derive a mathematically defined, defensible similarity score from that shared content.
-- Present overlapping suffix-derived matches as clean, distinct shared regions rather than
-  dozens of redundant, nested fragments.
-- Rank all document pairs by similarity.
-- Present the results — including the underlying DSA structures — in a clear web dashboard.
+The main objective of DOCS_SIMILARITY is to develop an efficient, suffix-based system for analyzing similarity among multiple documents.
 
-## 3. Features
+### Specific Objectives
 
-- Upload 2+ documents in **any mix of TXT, PDF, and DOCX** through a browser dashboard.
-- Client- and server-side validation of unsupported, empty, and corrupt files, with a
-  specific, user-facing error for scanned/image-only PDFs that contain no extractable text.
-- Real-time-feeling analysis progress checklist (stages reported by the backend), including
-  a dedicated text-extraction stage.
-- Summary cards: documents analyzed, pairs compared, common word sequences, highest similarity.
-- A documents table showing each file's original name, detected format, extracted length,
-  and extraction status (length in words).
-- Ranked similarity table with a visual similarity bar per pair.
-- Pair detail view showing the common word sequences — merged into distinct maximal
-  sequences, not raw overlapping suffix matches — with word count and word offsets.
-- Algorithm pipeline diagram.
-- "Algorithm Details" section exposing the real Suffix Array / LCP technical data
-  (paginated), plus pipeline status flags.
-- No fake data anywhere — every number in the UI comes from the Java backend's response.
+- Accept multiple documents and extract their textual content.
+- Normalize document text and tokenize it into words.
+- Represent words using integer token IDs for algorithmic processing.
+- Construct a Suffix Array using the prefix-doubling technique.
+- Construct an LCP Array using the Kasai Algorithm.
+- Identify common word sequences shared by different documents.
+- Merge overlapping matches to reduce duplicate counting.
+- Calculate document similarity scores based on shared textual content.
+- Rank document pairs from highest to lowest similarity.
+- Display matching textual segments for further inspection.
+- Demonstrate the practical application of DSA-3 string algorithms.
 
-## 4. Architecture
+## 3. Problem Statement
 
-```
-Browser (React)  --REST/JSON-->  Spring Boot API  --extracts via-->  PDFBox / POI
-                                          |
-                                          v
-                                  Suffix Array / Kasai LCP engine (plain text only)
-```
+Comparing large documents manually is time-consuming and makes it difficult to identify repeated passages across multiple files. Basic text matching can also produce fragmented results that are less useful for understanding document-level similarity.
 
-The DSA algorithms live in plain, framework-free Java classes (`com.docs_similarity.dsa`),
-completely decoupled from the web layer, so they can be read, tested, and understood on
-their own. The extraction layer (`com.docs_similarity.extraction`) is equally decoupled:
-it knows about file formats so the DSA layer never has to. By the time
-`CommonWordSequenceAnalyzer` runs, every document is just a `Document` object holding plain
-text — it has no idea whether that text came from a `.txt`, a `.pdf`, or a `.docx` file.
+The project addresses this problem by implementing suffix-based string-processing algorithms that organize document content, identify common word sequences, and quantify textual overlap. The resulting similarity scores and rankings help users locate document pairs that share substantial amounts of text.
 
-## 5. Technology Stack
+## 4. Proposed Solution
 
-**Frontend:** React 18 + Vite, plain CSS (no UI framework)
-**Backend:** Java 17+, Spring Boot 3 (Spring Web, Spring Validation)
-**Document extraction:** Apache PDFBox 2.0.31 (PDF), Apache POI 5.2.5 / poi-ooxml (DOCX)
-**Build tools:** Maven (backend, with wrapper), npm (frontend)
+DOCS_SIMILARITY provides a web-based interface for uploading and comparing documents.
 
-## 6. DSA Algorithms
+The backend extracts and normalizes the text, converts words into integer token IDs, and constructs a combined sequence with unique document boundaries. A Suffix Array organizes the suffixes of this sequence, while the Kasai Algorithm computes the corresponding LCP values.
 
-### 6.1 Word Tokenization and Token IDs (`util/WordTokenizer.java`, `util/TokenCombiner.java`)
+The system then identifies shared word sequences across document pairs, merges overlapping matches, calculates similarity scores, and ranks the results. The frontend displays the rankings, matching passages, and details of the algorithmic pipeline.
 
-```
-TXT/PDF/DOCX -> text extraction -> normalization -> words -> token IDs
-  -> integer token sequence with unique document sentinels -> Suffix Array -> Kasai LCP
-  -> common word sequences -> overlap merging -> similarity -> ranking
-```
+## 5. Features
 
-Tokenization is deterministic: Unicode NFKC normalization, lower-casing (`Locale.ROOT`),
-apostrophes inside words dropped (`don't` -> `dont`), and a word is a maximal run of
-letters/digits. All other characters (whitespace, punctuation, hyphens, quotes) separate
-words. Each distinct word gets an integer ID in order of first appearance; the reverse
-mapping (ID -> word) is kept so matched ID runs can be shown as readable words.
+- **Multiple document uploads:** Compare several documents in a single analysis.
+- **Multiple file formats:** Support for TXT, PDF, and DOCX files.
+- **Word-level comparison:** Identify shared sequences of words rather than arbitrary character fragments.
+- **Custom Suffix Array:** Constructed using the prefix-doubling technique.
+- **Kasai LCP construction:** Computes longest common prefixes efficiently.
+- **Common-sequence analysis:** Identifies qualifying shared word sequences across documents.
+- **Overlap merging:** Combines overlapping matches to reduce duplicate counting.
+- **Similarity scoring:** Calculates a percentage score for each document pair.
+- **Similarity ranking:** Ranks document pairs by their calculated scores.
+- **Matching-content inspection:** Displays common textual segments for selected comparisons.
+- **Algorithm visualization:** Presents relevant pipeline and suffix-structure information.
+- **Web interface:** Provides an accessible frontend for uploading files and reviewing results.
 
-Each document is followed by a **unique negative sentinel token** `-(docId + 1)`. It can
-never equal a word ID and no two documents share one, so a common sequence can never run
-from the end of one document into the next.
+## 6. Literature Grounding
 
-### 6.2 Suffix Array (`dsa/SuffixArray.java`)
+The following research works provide the theoretical and application-level background for the project's suffix-based approach to document similarity.
 
-Built over the integer token sequence with **prefix doubling** (Manber–Myers style): in
-round *k*, suffixes are ranked by their first 2^k **words**, reusing the previous round's
-ranks so each suffix is a pair of integers, sorted with a two-pass counting (radix) sort.
-This gives **O(n log n)** construction where n is the number of words, not characters.
+| Research Article | Method / Contribution | Key Finding / Conclusion | Relevance to DOCS_SIMILARITY |
+|---|---|---|---|
+| **Manber & Myers (1993) — "Suffix Arrays: A New Method for On-Line String Searches"** | Introduced Suffix Arrays as a compact alternative to suffix trees for efficient string searching. | Suffix Arrays support efficient string searches while offering practical space advantages over more complex suffix structures. | Provides the foundational data structure used to organize suffixes and support common-substring analysis. [Paper](https://epubs.siam.org/doi/10.1137/0222058) |
+| **Kasai et al. (2001) — "Linear-Time Longest-Common-Prefix Computation in Suffix Arrays and Its Applications"** | Presented an algorithm for computing LCP values from a Suffix Array. | LCP construction can be performed in linear time with respect to the sequence length. | Provides the theoretical basis for the project's Kasai LCP implementation. [Paper](https://doi.org/10.1007/3-540-48194-2_17) |
+| **Gagie et al. (2017) — "Document Retrieval on Repetitive String Collections"** | Investigated document retrieval over repetitive collections of strings using compressed and suffix-based structures. | Suffix-oriented structures can support document retrieval over collections containing repeated text. | Provides background for applying string-processing structures to collections of documents. [Paper](https://link.springer.com/article/10.1007/s10791-017-9297-7) |
+| **Louza et al. (2020) — "gsufsort: Constructing Suffix Arrays, LCP Arrays and BWTs for String Collections"** | Studied practical construction of Suffix Arrays, LCP Arrays, and Burrows–Wheeler Transforms for string collections. | Specialized construction methods make suffix-based processing practical for large collections. | Supports the use of suffix structures for collection-level textual analysis. [Paper](https://doi.org/10.1186/s13015-020-00177-y) |
+| **Baba et al. (2017) — "Plagiarism Detection Using Document Similarity Based on Distributed Representation"** | Explored document similarity for plagiarism detection using sequence-based and distributed-representation techniques. | Document similarity methods can help identify potentially plagiarized content. | Provides application-level background for using textual similarity to identify overlapping documents. [Paper](https://doi.org/10.1016/j.procs.2017.06.038) |
+| **Hussain & Suryani (2015) — "On Retrieving Intelligently Plagiarized Documents Using Semantic Similarity"** | Investigated semantic similarity for retrieving documents whose wording may differ while retaining similar meaning. | Semantic techniques can help identify cases that exact textual matching may miss. | Highlights a limitation of DOCS_SIMILARITY: it focuses on textual overlap rather than semantic equivalence. [Paper](https://doi.org/10.1016/j.engappai.2015.06.007) |
+| **Amirzhanov et al. (2025) — "Plagiarism Types and Detection Methods: A Systematic Survey of Algorithms in Text Analysis"** | Surveyed plagiarism types and text-analysis approaches, including string matching and semantic methods. | Different forms of plagiarism may require different detection techniques. | Provides broader context for the project's focus on duplicate and highly textually similar documents. [Paper](https://doi.org/10.3389/fcomp.2025.1504725) |
 
-### 6.3 LCP Array + Kasai's Algorithm (`dsa/KasaiLCP.java`)
+### Overall Literature Conclusion
 
-Given the Suffix Array, Kasai's Algorithm computes `LCP[i]` — the number of **words** the
-i-th and (i-1)-th suffixes in sorted order have in common at their start — for every i in a
-single **O(n)** pass, using the fact that walking the sequence in original order the LCP can
-drop by at most 1 between consecutive positions.
+The reviewed literature establishes the importance of Suffix Arrays and LCP structures for efficient string processing and highlights the application of textual similarity techniques to duplicate detection and plagiarism analysis.
 
-### 6.3b Common Word Sequence Analysis (`dsa/CommonWordSequenceAnalyzer.java`)
+Semantic methods address a different problem: detecting similarity when the wording changes but the meaning remains similar. DOCS_SIMILARITY concentrates on exact normalized word-sequence overlap, using Suffix Arrays, the Kasai Algorithm, common-sequence analysis, and similarity ranking.
 
-For a suffix s and another document Y, the longest word sequence starting at s that also
-occurs in Y is the largest LCP between s and any suffix of Y. In sorted order that is
-achieved by the **nearest** Y-suffix above or below s, and the LCP between two sorted
-positions is the minimum of the LCP array between them. One forward and one backward sweep
-over the Suffix Array per document gives every suffix its longest match in every other
-document, in O(n × documents). This also finds matches between documents A and C when a
-suffix of B sorts between them (e.g. three copies of the same paragraph). Matches of at
-least `MIN_SEQUENCE_WORDS` = 3 words are kept, and consecutive suffixes on the same
-alignment are joined into runs while scanning.
+## 7. Design Methodology
 
-### 6.4 Document Extraction (`extraction/`)
+The system follows a sequential processing pipeline.
 
-Before any DSA code runs, each uploaded file is converted to plain text by
-`DocumentTextExtractor`, which dispatches by file extension to one of three extractors:
+### Step 1: Input Documents
 
-| Format | Extractor | Library |
-|--------|-----------|---------|
-| `.txt` | `TxtTextExtractor` | none — UTF-8 decode |
-| `.pdf` | `PdfTextExtractor` | Apache PDFBox (`PDFTextStripper`) |
-| `.docx` | `DocxTextExtractor` | Apache POI (`XWPFDocument` + `XWPFWordExtractor`) |
+Users upload multiple supported documents through the frontend. Each document is associated with its own identifier so that the source of a matching sequence can be determined.
 
-This layer is where every format-specific edge case is resolved, **before** anything
-reaches the Suffix Array:
+### Step 2: Text Extraction
 
-- An unsupported extension (`.xlsx`, `.pptx`, legacy `.doc`, etc.) is rejected immediately
-  with a message naming the file and listing the supported formats.
-- A corrupt or unreadable file (bad ZIP structure, malformed PDF, etc.) is caught and
-  reported with a clear, file-specific error rather than propagating a raw stack trace.
-- A password-protected PDF is detected and rejected with a specific message.
-- A **scanned/image-only PDF** — one PDFBox can open but that has no embedded text
-  layer — is explicitly detected (the extracted text is blank) and rejected with a message
-  stating that OCR is not supported in this version, rather than silently "succeeding" with
-  an empty, meaningless document.
+The backend extracts plain text from the uploaded files:
 
-OCR, `.pptx`, `.xlsx`, and legacy binary `.doc` are intentionally out of scope for this
-version — files in those formats are rejected the same way any other unsupported type is.
+- **TXT:** Reads the text content directly.
+- **PDF:** Uses Apache PDFBox to extract text.
+- **DOCX:** Uses Apache POI to extract document text.
 
-Once extraction succeeds, the resulting plain text is handed to the exact same
-`preprocessText()` step, tokenizer and `CommonWordSequenceAnalyzer` that process `.txt` uploads — the
-Suffix Array, Kasai's Algorithm, and the LCP Array were not modified to add multi-format
-support.
+### Step 3: Text Preprocessing
 
-### 6.5 Overlap Merging (`service/CommonSequenceMerger.java`)
+The extracted text is normalized and split into words. The resulting word tokens are represented using integer IDs, allowing the suffix-based algorithms to operate on a sequence of tokens.
 
-A shared passage of k words is found once for (almost) every word in it, because each of its
-suffixes finds its partner: `machine learning algorithms`, `learning algorithms`, ... These
-must be neither displayed separately nor counted repeatedly.
+### Step 4: Combined Sequence Construction
 
-1. **Diagonal merging.** Matches with the same alignment (`offsetInA - offsetInB`) whose
-   word intervals overlap or touch are merged into one maximal sequence. Its words are
-   rebuilt from token IDs via the reverse mapping.
-2. **Contained variations dropped.** A sequence whose word interval in A (or in B) lies
-   inside a longer kept sequence is a fragment of it (typically a repeated phrase matched at
-   another alignment) and is not shown separately.
+The token sequences from the documents are combined into a single sequence. Unique boundary sentinels are used to distinguish documents and prevent matches from incorrectly crossing document boundaries.
 
-Each displayed sequence shows the word sequence, its word count, and its word offset in
-document A and in document B.
+### Step 5: Suffix Array Construction
 
-### 6.6 Similarity Formula (`service/DocumentSimilarityService.java`)
+The system constructs a Suffix Array using the prefix-doubling technique. It repeatedly sorts suffixes using progressively larger prefixes until their relative ordering is established.
 
-For a document pair (A, B), after merging:
+### Step 6: LCP Array Construction
 
-```
-sharedWordsInA = words of A inside at least one merged common sequence with B
-                 (union of intervals: a word covered by several matches counts once)
-sharedWordsInB = the same, within B
-sharedWords    = min(sharedWordsInA, sharedWordsInB)
+The Kasai Algorithm computes the LCP Array using the constructed Suffix Array. The LCP values represent the lengths of common prefixes between adjacent suffixes in suffix-array order.
 
-Similarity(A, B) = (2 × sharedWords / (wordCountA + wordCountB)) × 100
-```
+### Step 7: Common Word Sequence Analysis
 
-Raw LCP values are never summed. Taking the smaller side means a phrase that occurs once in
-A and three times in B contributes its words once. Identical documents score 100%; documents
-without a common sequence of at least 3 words score 0%. This value drives the ranking
-(ties are broken by shared words, then by document order, so the ranking is deterministic).
+The system examines suffix and LCP information to identify qualifying shared word sequences belonging to different documents. The minimum qualifying sequence length is three words.
 
-### 6.7 Document Boundaries
+### Step 8: Overlap Merging
 
-Token positions are mapped back to `(documentId, wordOffsetWithinDocument)` via a lookup
-built alongside the token sequence (`util/TokenCombiner.java`). Combined with the unique
-per-document sentinels, every reported sequence can be traced back to its exact word
-position in both source documents.
+Overlapping matching intervals are merged to reduce repeated counting of the same matched regions.
 
-### 6.8 Upload Limits
+### Step 9: Similarity Calculation
 
-25 MB per file and 100 MB per request, set both in `application.properties`
-(`spring.servlet.multipart.*`) and programmatically as a `MultipartConfigElement` bean in
-`config/CorsConfig.java`. An upload over the limit returns HTTP 413 with a JSON error.
+The system calculates a similarity percentage for each document pair using the amount of shared textual content relative to the combined word counts of the two documents.
 
-## 7. Project Structure
+### Step 10: Ranking and Results
 
-```
+The document pairs are sorted by similarity score. Users can inspect the ranking and review the common word sequences identified for selected pairs.
+
+## 8. Algorithms and Data Structures
+
+### 8.1 Word Tokenization and Integer Encoding
+
+Document text is normalized and divided into word tokens. Each normalized word is represented by an integer token ID.
+
+This representation allows the Suffix Array and LCP algorithms to process words as sequence elements instead of comparing raw character strings.
+
+### 8.2 Suffix Array
+
+A Suffix Array stores the starting positions of all suffixes of a sequence in lexicographical order.
+
+For a sequence of length \(n\), the project's prefix-doubling approach has a target time complexity of \(O(n\log n)\) under the implementation's sorting assumptions.
+
+The Suffix Array organizes suffixes so that common prefixes can be identified efficiently.
+
+### 8.3 Kasai Algorithm and LCP Array
+
+The Longest Common Prefix Array stores the common-prefix length between adjacent suffixes in Suffix Array order.
+
+The Kasai Algorithm constructs the LCP Array in \(O(n)\) time after the Suffix Array has been constructed.
+
+In DOCS_SIMILARITY, the LCP values are interpreted at the word level because the underlying sequence contains integer word IDs.
+
+### 8.4 Common Word Sequence Analysis
+
+The analyzer uses the Suffix Array, LCP values, and document-boundary information to identify shared sequences across different documents.
+
+A minimum qualifying length of three words helps exclude very short matches that are less informative.
+
+### 8.5 Overlap Merging
+
+Multiple detected sequences can overlap. The merging stage combines overlapping intervals so that the same matched region is not repeatedly counted as independent shared content.
+
+### 8.6 Similarity Score
+
+For a document pair \(A\) and \(B\), the similarity score is calculated using:
+
+\[
+\text{Similarity}(A,B)=
+\frac{2\times\text{SharedWords}}
+{\text{Words}_A+\text{Words}_B}\times100
+\]
+
+Where:
+
+- \(\text{Words}_A\) is the number of normalized word tokens in document \(A\).
+- \(\text{Words}_B\) is the number of normalized word tokens in document \(B\).
+- \(\text{SharedWords}\) represents the shared word count derived from the merged matching intervals, with the pairwise shared count bounded by the matched counts in the two documents.
+
+The result is expressed as a percentage. A higher score indicates greater measured textual overlap under the project's scoring method.
+
+### 8.7 Document Boundaries
+
+Unique boundary sentinels distinguish the individual documents within the combined sequence. This prevents a common sequence from being treated as a valid match when it exists only because the end of one document is adjacent to the beginning of another.
+
+## 9. System Architecture
+
+The project follows a frontend–backend architecture.
+
+**Frontend**
+
+- React
+- Vite
+- JavaScript
+- CSS
+
+The frontend handles document uploads, result presentation, similarity rankings, matching-sequence inspection, and algorithm-related information.
+
+**Backend**
+
+- Java
+- Spring Boot
+- Maven
+- Apache PDFBox
+- Apache POI
+
+The backend handles document extraction, tokenization, suffix-based processing, LCP construction, common-sequence analysis, similarity calculation, and result generation.
+
+**Processing flow**
+
+`Document Upload → Text Extraction → Normalization → Word Tokenization → Integer Encoding → Combined Sequence → Suffix Array → Kasai LCP → Common Sequence Analysis → Overlap Merging → Similarity Scoring → Ranking`
+
+## 10. Technology Stack
+
+| Component | Technology |
+|---|---|
+| Programming language — backend | Java |
+| Backend framework | Spring Boot |
+| Build and dependency management | Maven |
+| Frontend library | React |
+| Frontend development server and build tool | Vite |
+| Document extraction — PDF | Apache PDFBox |
+| Document extraction — DOCX | Apache POI |
+| Version control | Git |
+| Repository hosting | GitHub |
+| Development environment | Visual Studio Code or another compatible IDE |
+
+## 11. Project Structure
+
+The repository is organized into backend, frontend, and sample-document directories.
+
+```text
 DOCS_SIMILARITY/
 ├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   └── test/
 │   ├── pom.xml
-│   ├── mvnw / mvnw.cmd / .mvn/
-│   └── src/
-│       ├── main/java/com/docs_similarity/
-│       │   ├── DocsSimilarityApplication.java
-│       │   ├── controller/AnalysisController.java, UploadLimitExceptionHandler.java
-│       │   ├── config/CorsConfig.java
-│       │   ├── service/
-│       │   │   ├── DocumentSimilarityService.java
-│       │   │   └── CommonSequenceMerger.java
-│       │   ├── dsa/
-│       │   │   ├── SuffixArray.java
-│       │   │   ├── KasaiLCP.java
-│       │   │   └── CommonWordSequenceAnalyzer.java
-│       │   ├── extraction/
-│       │   │   ├── TextExtractor.java
-│       │   │   ├── TxtTextExtractor.java
-│       │   │   ├── PdfTextExtractor.java
-│       │   │   ├── DocxTextExtractor.java
-│       │   │   ├── DocumentTextExtractor.java
-│       │   │   └── ExtractionException.java
-│       │   ├── model/
-│       │   │   ├── Document.java
-│       │   │   ├── DocumentResult.java
-│       │   │   ├── CommonWordSequence.java
-│       │   │   ├── SimilarityResult.java
-│       │   │   ├── SuffixArrayEntry.java
-│       │   │   ├── AlgorithmDetails.java
-│       │   │   └── AnalysisResponse.java
-│       │   └── util/WordTokenizer.java, util/TokenCombiner.java
-│       └── test/java/com/docs_similarity/
-│           ├── dsa/SuffixArrayTest.java
-│           ├── dsa/KasaiLCPTest.java
-│           ├── dsa/CommonWordSequenceAnalyzerTest.java
-│           ├── util/WordTokenizerTest.java, util/TokenCombinerTest.java
-│           ├── config/UploadLimitsIntegrationTest.java
-│           ├── extraction/TxtTextExtractorTest.java
-│           ├── extraction/PdfTextExtractorTest.java
-│           ├── extraction/DocxTextExtractorTest.java
-│           ├── extraction/DocumentTextExtractorTest.java
-│           ├── service/DocumentSimilarityServiceTest.java
-│           └── service/CommonSequenceMergerTest.java
+│   └── mvnw
 ├── frontend/
-│   ├── package.json, vite.config.js, index.html
-│   └── src/
-│       ├── main.jsx, App.jsx, index.css
-│       └── components/
-│           ├── UploadPanel.jsx
-│           ├── ProgressChecklist.jsx
-│           ├── SummaryCards.jsx
-│           ├── DocumentsList.jsx
-│           ├── RankingTable.jsx
-│           ├── PairDetail.jsx
-│           ├── Pipeline.jsx
-│           └── AlgorithmDetails.jsx
+│   ├── src/
+│   ├── package.json
+│   └── index.html
 ├── sample-documents/
-│   ├── document1.txt   (shares a large passage with document3 — high similarity)
-│   ├── document2.txt   (shares a large passage with document4 — high similarity)
-│   ├── document3.txt   (near-duplicate of document1 with edits)
-│   └── document4.txt   (near-duplicate of document2 with edits)
+├── .gitignore
 └── README.md
 ```
 
-## 8. How to Run — Backend
+The exact files and directories may vary slightly as the project evolves.
 
-Requires **Java 17+**. From `backend/`:
+The backend's principal algorithmic responsibilities are separated into components such as:
+
+- `WordTokenizer.java` — word normalization and tokenization.
+- `TokenCombiner.java` — combining token sequences with document boundaries.
+- `SuffixArray.java` — Suffix Array construction.
+- `KasaiLCP.java` — LCP Array construction.
+- `CommonWordSequenceAnalyzer.java` — identification of shared word sequences.
+- `CommonSequenceMerger.java` — merging overlapping matches.
+- `DocumentSimilarityService.java` — coordinating the analysis and similarity calculation.
+
+## 12. Setup and Execution Instructions
+
+### Prerequisites
+
+Install the following:
+
+- Java Development Kit (JDK) compatible with the backend; Java 17 or later is the intended baseline.
+- Node.js and npm.
+- Git.
+- A terminal and a code editor.
+
+### Clone the Repository
 
 ```bash
+git clone https://github.com/siribillakanti/KLH-CSE-2026-27-TEAM-07-DOCS_SIMILARITY.git
+
+cd KLH-CSE-2026-27-TEAM-07-DOCS_SIMILARITY
+```
+
+### Start the Backend
+
+Open a terminal and execute:
+
+```bash
+cd backend
 ./mvnw spring-boot:run
 ```
 
-(Windows: `mvnw.cmd spring-boot:run`)
+On Windows, use the Maven wrapper's Windows command if available:
 
-The first run downloads Maven itself via the wrapper, then all dependencies — an internet
-connection is required for this step. The API starts on **http://localhost:8080**.
-
-To run the test suite:
-
-```bash
-./mvnw test
+```powershell
+mvnw.cmd spring-boot:run
 ```
 
-## 9. How to Run — Frontend
+The Spring Boot backend is configured to run on port `8080` in the local development setup.
 
-Requires **Node.js 18+**. From `frontend/`:
+If port `8080` is already occupied, stop the existing process or configure a different port before starting the application.
+
+### Start the Frontend
+
+Open a second terminal from the repository root:
 
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-The dashboard opens on **http://localhost:5173** and talks to the backend at
-`http://localhost:8080`. Start the backend first.
+Open the local URL printed by Vite in the terminal. The default development URL is:
 
-## 10. API Endpoints
+`http://localhost:5173`
 
-### `POST /api/analyze`
+Keep both development servers running while testing the locally hosted application.
 
-`multipart/form-data`, field name `files`, 2 or more documents in any mix of **TXT, PDF,
-and DOCX**.
+### Running the Application
 
-On a validation or extraction failure (unsupported type, corrupt file, empty document,
-scanned/image-only PDF with no text layer, etc.), returns **HTTP 400** with
-`{ "error": "<specific message>" }` — no partial or fake results are ever returned.
+1. Start the backend.
+2. Start the frontend.
+3. Open the frontend in a browser.
+4. Upload two or more supported documents.
+5. Run the comparison.
+6. Review the ranked document pairs and their similarity scores.
+7. Select a pair to inspect common textual sequences and related analysis details.
 
-On success, returns JSON:
+## 13. Input and Output
 
-```json
-{
-  "documents": [
-    { "id": 0, "filename": "document1.txt", "length": 1288, "wordCount": 187, "sourceFormat": "TXT", "extractionStatus": "SUCCESS" },
-    { "id": 1, "filename": "document3.docx", "length": 1147, "wordCount": 164, "sourceFormat": "DOCX", "extractionStatus": "SUCCESS" }
-  ],
-  "ranking": [
-    {
-      "rank": 1, "docAId": 0, "docBId": 1,
-      "docAName": "document1.txt", "docBName": "document3.docx",
-      "similarityPercent": 72.36,
-      "wordCountA": 187, "wordCountB": 164,
-      "sharedWordsInA": 127, "sharedWordsInB": 127, "sharedWords": 127,
-      "totalCommonSequences": 1,
-      "topCommonSequences": [ { "text": "renewable energy sources such as ...", "wordCount": 127, "offsetInA": 0, "offsetInB": 11 } ]
-    }
-  ],
-  "summary": { "documentsAnalyzed": 2, "pairsCompared": 1, "commonSegmentsFound": 1, "highestSimilarity": 72.36 },
-  "algorithmDetails": { "combinedTokenCount": 353, "minSequenceWords": 3, "...": "suffix array / LCP status and word-based sample rows" },
-  "pipelineStages": ["Documents loaded", "Text extracted from all documents (TXT/PDF/DOCX)", "..."]
-}
-```
+### Input
 
-`totalCommonSequences` / `summary.commonSegmentsFound` count the distinct maximal common word
-sequences shown in the UI; `algorithmDetails.rawSuffixMatches` is the suffix-level match
-count before merging. All lengths and offsets are in words.
+The application accepts:
 
-### `GET /api/health`
+- TXT documents.
+- PDF documents containing extractable text.
+- DOCX documents.
 
-Simple liveness check.
+The configured upload limits are 25 MB per file and 100 MB per request.
 
-## 11. Sample Input
+Scanned or image-only PDFs that do not contain extractable text are not supported by the current text-extraction pipeline. Optical Character Recognition (OCR) is outside the current scope.
 
-`sample-documents/` contains 4 files demonstrating all three cases required by the brief:
+### Output
 
-- **Highly similar:** `document1.txt` ↔ `document3.txt` (shared renewable-energy passage)
-- **Highly similar (second pair):** `document2.txt` ↔ `document4.txt` (shared urban-gardening passage)
-- **Unrelated / low similarity:** every other pair (e.g. `document1.txt` ↔ `document2.txt`)
+The application presents:
 
-## 12. Expected Output
+- Document-pair similarity scores.
+- Ranked similarity results.
+- Common word sequences identified between documents.
+- Details of selected document comparisons.
+- Information about the processing pipeline and suffix-based algorithms.
 
-Running the sample set through the real engine (minimum sequence length = 3 words) produces:
+## 14. Testing and Evaluation
 
-| Pair                          | Similarity | Shared words |
-|--------------------------------|-----------:|-------------:|
-| document1.txt ↔ document3.txt  | 72.36%     | 127          |
-| document2.txt ↔ document4.txt  | 69.50%     | 98           |
-| every other pair               | 0.00%      | 0            |
+The system should be evaluated using documents with known relationships and expected textual overlap.
 
-(Computed live — this table is a sanity reference, not a hardcoded output. The unrelated
-pairs no longer pick up coincidental character fragments.)
+Recommended test cases include:
 
-## 13. Testing
+- Two documents containing identical text.
+- Two documents containing a shared passage.
+- Documents containing only short common phrases.
+- Documents with different content.
+- Multiple documents with different levels of overlap.
+- Documents in different supported file formats.
+- Documents containing punctuation, repeated words, and different whitespace patterns.
+- Inputs at or near the configured upload limits.
+- Empty, malformed, or unsupported files.
 
-JUnit 5 tests cover:
+Evaluation should examine the correctness of suffix ordering, LCP values, common-sequence detection, overlap merging, similarity-score calculation, ranking, and document-boundary handling.
 
-- **Token-based Suffix Array** — word-ID suffix order for a known sentence, brute-force
-  cross-check on random integer sequences, plus the classic `"banana$"` examples.
-- **Kasai LCP in words** — a shared 3-word phrase gives LCP 3 (not its character length),
-  brute-force cross-check on random token sequences.
-- **Tokenization** — case, punctuation, whitespace, contractions, ligatures, token IDs and
-  reverse mapping.
-- **Common word sequences** — identical, unrelated, partially similar documents, repeated
-  words, punctuation/case normalization, document boundary protection, three identical
-  documents, and character fragments (`environment` / `nvironment`) not matching.
-- **Overlap merging** — overlapping and nested suffix matches collapse into one sequence,
-  distinct alignments stay separate, contained variations are dropped.
-- **Similarity** — exact formula value, overlapping matches not double-counted, repeated
-  words cannot inflate the score, identical content across TXT/PDF/DOCX.
-- **Ranking** — sorted by word-based similarity with correct rank numbers.
-- **Extraction** — TXT, PDF and DOCX extraction, corrupt files, scanned PDFs, unsupported types.
-- **Upload limits** — a ~16 MB PDF is accepted by the real embedded server; a 26 MB file gets 413.
+Actual test results should be recorded from the test runs performed on the final project version.
 
-Run with `./mvnw test` from `backend/`.
+## 15. Technical Soundness and Limitations
 
-## 14. Limitations
+### Technical Strengths
 
-- Only TXT, PDF, and DOCX are accepted. Legacy binary `.doc`, `.pptx`, and `.xlsx` are
-  rejected with a clear error, as is any other file type.
-- PDF/DOCX extraction reads the embedded text layer only — **no OCR** is performed. A
-  scanned or image-only PDF is rejected with a specific error rather than silently analyzed
-  as empty.
-- The similarity formula weights exact word-sequence overlap; it does not account for
-  paraphrasing, synonym substitution, or reordering of ideas — by design, since this is a
-  Suffix-Array-based lexical engine, not a semantic one.
-- `MIN_SEQUENCE_WORDS` (3 words) is a fixed constant; shorter coincidental matches are
-  ignored. Common 3-word phrases (e.g. "one of the") can still match between unrelated
-  news articles; raise the constant to 4 or 5 for stricter results.
-- Words split across a PDF line break with a hyphen ("environ-" / "ment") become two words.
-- The Suffix Array uses prefix doubling (O(n log n)) rather than a linear-time construction
-  (e.g. SA-IS/DC3) — a deliberate trade-off favoring code clarity and readability for a
-  DSA-3 academic demonstration over maximal asymptotic performance.
+- Implements Suffix Array construction and Kasai LCP computation as core algorithms.
+- Applies the algorithms to word-level document comparison.
+- Separates document extraction from the suffix-based processing engine.
+- Preserves document boundaries in the combined sequence.
+- Merges overlapping matches before similarity scoring.
+- Provides a frontend for inspecting results rather than returning only a numerical score.
 
-## 15. Future Enhancements
+### Limitations
 
-- Linear-time Suffix Array construction (SA-IS).
-- OCR support for scanned/image-only PDFs.
-- Support for legacy `.doc`, `.pptx`, and `.xlsx` input formats.
-- Semantic similarity as a secondary, clearly-labeled metric alongside the lexical score.
-- Persisted analysis history and exportable reports.
+- The analyzer focuses on normalized textual overlap, not semantic similarity.
+- Paraphrased text with substantially different wording may not be detected as similar.
+- Scanned PDFs without extractable text are not supported because OCR is not included.
+- Similarity scores depend on the implementation's tokenization, matching, and scoring rules.
+- A high textual-similarity score indicates substantial overlap; it does not by itself establish plagiarism or prove that copying occurred.
 
-## 16. Team
+## 16. Applications
 
-| Roll No.     | Name                    |
-|--------------|-------------------------|
-| 2520030601   | Billakanti Siri         |
-| 2520030082   | Bhavana Kondakrindi     |
-| 2520030184   | Aniketh Pani            |
+Potential applications include:
+
+- Duplicate document identification.
+- Preliminary plagiarism screening.
+- Comparison of academic documents.
+- Identification of repeated passages across reports.
+- Analysis of overlapping text in document collections.
+- Preliminary document grouping based on textual overlap.
+
+These are potential applications of the implemented textual-comparison approach, not a claim that the system provides a complete plagiarism-detection solution.
+
+## 17. Course Alignment
+
+DOCS_SIMILARITY aligns with the DSA-3 TextHack framework by applying string-processing algorithms to a practical document-analysis problem.
+
+The project demonstrates:
+
+- Suffix Array construction.
+- Prefix-doubling techniques.
+- LCP Array construction.
+- Kasai Algorithm.
+- Common-substring and word-sequence analysis.
+- Algorithmic complexity analysis.
+- Application of data structures to a real-world problem.
+- Integration of algorithmic processing with a web application.
+
+## 18. Team Details
+
+| Team Member | Role |
+|---|---|
+| Billakanti Siri | Team Lead Project development and documentation |
+| Bhavana Kondakrindi | Frontend developer |
+| Aniketh Pani | sample datasets, testing |
+
+## 19. Conclusion
+
+DOCS_SIMILARITY demonstrates how Suffix Arrays and the Kasai Algorithm can be applied to document-level textual comparison. By processing documents at the word level, identifying common sequences, merging overlapping matches, and calculating similarity scores, the system provides an interpretable approach to identifying duplicate and highly similar textual content.
+
+The project combines core DSA concepts with a Java Spring Boot backend and a React-based frontend. It illustrates the practical use of string-processing algorithms while clearly distinguishing exact textual overlap from semantic similarity and definitive plagiarism detection.
+
+## 20. References
+
+1. Manber, U., & Myers, G. (1993). *Suffix Arrays: A New Method for On-Line String Searches*. SIAM Journal on Computing. https://epubs.siam.org/doi/10.1137/0222058
+2. Kasai, T., Lee, G., Arimura, H., Arikawa, S., & Park, K. (2001). *Linear-Time Longest-Common-Prefix Computation in Suffix Arrays and Its Applications*. https://doi.org/10.1007/3-540-48194-2_17
+3. Gagie et al. (2017). *Document Retrieval on Repetitive String Collections*. https://link.springer.com/article/10.1007/s10791-017-9297-7
+4. Louza et al. (2020). *gsufsort: Constructing Suffix Arrays, LCP Arrays and BWTs for String Collections*. https://doi.org/10.1186/s13015-020-00177-y
+5. Baba et al. (2017). *Plagiarism Detection Using Document Similarity Based on Distributed Representation*. https://doi.org/10.1016/j.procs.2017.06.038
+6. Hussain & Suryani (2015). *On Retrieving Intelligently Plagiarized Documents Using Semantic Similarity*. https://doi.org/10.1016/j.engappai.2015.06.007
+7. Amirzhanov et al. (2025). *Plagiarism Types and Detection Methods: A Systematic Survey of Algorithms in Text Analysis*. https://doi.org/10.3389/fcomp.2025.1504725
