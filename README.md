@@ -425,6 +425,8 @@ The project demonstrates:
 | Bhavana Kondakrindi | Frontend developer |
 | Aniketh Pani | sample datasets, testing |
 
+**Project Supervisor:** Dr.Ch.Anuradha
+
 ## 19. Conclusion
 
 DOCS_SIMILARITY demonstrates how Suffix Arrays and the Kasai Algorithm can be applied to document-level textual comparison. By processing documents at the word level, identifying common sequences, merging overlapping matches, and calculating similarity scores, the system provides an interpretable approach to identifying duplicate and highly similar textual content.
